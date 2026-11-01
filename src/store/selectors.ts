@@ -7,6 +7,20 @@ export const selectBaseStats = (state: RootState) => state.stats;
 export const selectInventory = (state: RootState) => state.inventory;
 export const selectActionLogs = (state: RootState) => state.actionLog.logs;
 
+// Estado computado de salud y derrota del héroe
+export const selectHeroComputedStatus = createSelector(
+  [selectBaseStats],
+  (stats) => ({
+    currentHp: stats.currentHp,
+    maxHp: stats.maxHp,
+    isDefeated: stats.currentHp <= 0,
+    hpPercentage:
+      stats.maxHp > 0
+        ? Math.min(100, Math.max(0, (stats.currentHp / stats.maxHp) * 100))
+        : 0,
+  })
+);
+
 // Ítems equipados
 export const selectEquippedItems = createSelector(
   [selectInventory],

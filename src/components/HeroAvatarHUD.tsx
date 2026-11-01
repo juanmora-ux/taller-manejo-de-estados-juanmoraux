@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAppSelector } from '../store';
 import {
-  selectBaseStats,
   selectCurrentWeight,
   selectHeroIdentity,
   selectIsOverloaded,
@@ -12,10 +11,12 @@ import {
   selectTotalStr,
   selectTotalAgi,
   selectTotalInt,
+  selectHeroComputedStatus,
 } from '../store/selectors';
 
 export const HeroAvatarHUD: React.FC = () => {
-  const { currentHp, maxHp } = useAppSelector(selectBaseStats);
+  const { currentHp, maxHp, isDefeated, hpPercentage } =
+    useAppSelector(selectHeroComputedStatus);
   const { heroClass, auraColor, avatarIcon, titleDescription } =
     useAppSelector(selectHeroIdentity);
   const currentWeight = useAppSelector(selectCurrentWeight);
@@ -27,8 +28,9 @@ export const HeroAvatarHUD: React.FC = () => {
   const totalAgi = useAppSelector(selectTotalAgi);
   const totalInt = useAppSelector(selectTotalInt);
 
-  // Porcentaje de vida
-  const hpPercent = Math.min(100, Math.max(0, (currentHp / maxHp) * 100));
+  // Aura y emoji reactivo si el héroe es derrotado
+  const activeAuraColor = isDefeated ? '#EF4444' : auraColor;
+  const activeAvatarEmoji = isDefeated ? '💀' : avatarIcon;
 
   // Color dinámico de la barra de peso y etiquetas temáticas
   let weightBarColor = '#10B981'; // Verde Neón (<70%)
@@ -46,7 +48,7 @@ export const HeroAvatarHUD: React.FC = () => {
   }
 
   return (
-    <View style={[styles.container, { borderColor: `${auraColor}50` }]}>
+    <View style={[styles.container, { borderColor: `${activeAuraColor}50` }]}>
       {/* Header Gamificado */}
       <View style={styles.headerRow}>
         <View style={styles.zoneTagBox}>
@@ -57,9 +59,26 @@ export const HeroAvatarHUD: React.FC = () => {
           <Text style={styles.zoneTitle}>HERO AVATAR HUD</Text>
           <Text style={styles.zoneSubtitle}>Estado Biométrico en Tiempo Real</Text>
         </View>
-        <View style={styles.readOnlyBadge}>
-          <View style={styles.pulseDot} />
-          <Text style={styles.readOnlyText}>HUD ACTIVO</Text>
+        <View
+          style={[
+            styles.readOnlyBadge,
+            isDefeated && styles.readOnlyBadgeDefeated,
+          ]}
+        >
+          <View
+            style={[
+              styles.pulseDot,
+              isDefeated && styles.pulseDotDefeated,
+            ]}
+          />
+          <Text
+            style={[
+              styles.readOnlyText,
+              isDefeated && styles.readOnlyTextDefeated,
+            ]}
+          >
+            {isDefeated ? 'HÉROE CAÍDO' : 'HUD ACTIVO'}
+          </Text>
         </View>
       </View>
 
@@ -70,8 +89,8 @@ export const HeroAvatarHUD: React.FC = () => {
           style={[
             styles.outerAuraRing,
             {
-              borderColor: `${auraColor}40`,
-              shadowColor: auraColor,
+              borderColor: `${activeAuraColor}40`,
+              shadowColor: activeAuraColor,
             },
           ]}
         >
@@ -80,7 +99,7 @@ export const HeroAvatarHUD: React.FC = () => {
             style={[
               styles.midAuraRing,
               {
-                borderColor: `${auraColor}80`,
+                borderColor: `${activeAuraColor}80`,
               },
             ]}
           >
@@ -89,62 +108,102 @@ export const HeroAvatarHUD: React.FC = () => {
               style={[
                 styles.avatarCore,
                 {
-                  borderColor: auraColor,
-                  shadowColor: auraColor,
+                  borderColor: activeAuraColor,
+                  shadowColor: activeAuraColor,
+                  backgroundColor: isDefeated ? '#2A0808' : '#1E293B',
                 },
               ]}
             >
-              <Text style={styles.avatarEmoji}>{avatarIcon}</Text>
+              <Text style={styles.avatarEmoji}>{activeAvatarEmoji}</Text>
             </View>
           </View>
         </View>
 
-        {/* Badge de Clase Flotante */}
-        <View
-          style={[
-            styles.classBadge,
-            {
-              borderColor: auraColor,
-              shadowColor: auraColor,
-              backgroundColor: '#0D1424',
-            },
-          ]}
-        >
+        {/* Badge de Clase Flotante o DERROTADO EN COMBATE */}
+        {isDefeated ? (
+          <View style={styles.defeatedBadge}>
+            <Text style={styles.defeatedBadgeIcon}>☠️</Text>
+            <Text style={styles.defeatedBadgeText}>DERROTADO EN COMBATE</Text>
+            <Text style={styles.defeatedBadgeIcon}>☠️</Text>
+          </View>
+        ) : (
           <View
-            style={[styles.classBadgeGlowBar, { backgroundColor: auraColor }]}
-          />
-          <Text style={[styles.classBadgeText, { color: auraColor }]}>
-            ⚔️ {heroClass.toUpperCase()}
-          </Text>
-          <View
-            style={[styles.classBadgeGlowBar, { backgroundColor: auraColor }]}
-          />
-        </View>
+            style={[
+              styles.classBadge,
+              {
+                borderColor: activeAuraColor,
+                shadowColor: activeAuraColor,
+                backgroundColor: '#0D1424',
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.classBadgeGlowBar,
+                { backgroundColor: activeAuraColor },
+              ]}
+            />
+            <Text style={[styles.classBadgeText, { color: activeAuraColor }]}>
+              ⚔️ {heroClass.toUpperCase()}
+            </Text>
+            <View
+              style={[
+                styles.classBadgeGlowBar,
+                { backgroundColor: activeAuraColor },
+              ]}
+            />
+          </View>
+        )}
 
-        <Text style={styles.subtitleLore}>{titleDescription}</Text>
+        <Text style={styles.subtitleLore}>
+          {isDefeated
+            ? 'La salud del héroe ha llegado a 0. ¡Cúralo en la Zona D!'
+            : titleDescription}
+        </Text>
       </View>
 
       {/* Barras de Recursos HUD */}
       <View style={styles.barsContainer}>
-        {/* Barra de Salud (HP) */}
+        {/* Barra de Salud (HP) con Ancho Dinámico */}
         <View style={styles.barCard}>
           <View style={styles.barHeader}>
             <View style={styles.barLabelWithIcon}>
-              <View style={styles.hpIconBadge}>
-                <Text style={styles.hpIconText}>❤️</Text>
+              <View
+                style={[
+                  styles.hpIconBadge,
+                  isDefeated && styles.hpIconBadgeDefeated,
+                ]}
+              >
+                <Text style={styles.hpIconText}>
+                  {isDefeated ? '💀' : '❤️'}
+                </Text>
               </View>
               <Text style={styles.barLabel}>PUNTOS DE SALUD (HP)</Text>
             </View>
             <View style={styles.barNumbersRow}>
-              <Text style={styles.barCurrentValue}>{currentHp}</Text>
+              <Text
+                style={[
+                  styles.barCurrentValue,
+                  isDefeated && styles.barCurrentValueDefeated,
+                ]}
+              >
+                {currentHp}
+              </Text>
               <Text style={styles.barMaxValue}> / {maxHp}</Text>
               <Text
                 style={[
                   styles.barPercentText,
-                  { color: hpPercent < 30 ? '#EF4444' : '#34D399' },
+                  {
+                    color:
+                      isDefeated
+                        ? '#EF4444'
+                        : hpPercentage < 30
+                        ? '#EF4444'
+                        : '#34D399',
+                  },
                 ]}
               >
-                ({Math.round(hpPercent)}%)
+                ({Math.round(hpPercentage)}%)
               </Text>
             </View>
           </View>
@@ -154,9 +213,19 @@ export const HeroAvatarHUD: React.FC = () => {
               style={[
                 styles.progressFill,
                 {
-                  width: `${hpPercent}%`,
-                  backgroundColor: hpPercent < 25 ? '#EF4444' : '#10B981',
-                  shadowColor: hpPercent < 25 ? '#EF4444' : '#10B981',
+                  width: `${hpPercentage}%`,
+                  backgroundColor:
+                    isDefeated
+                      ? '#EF4444'
+                      : hpPercentage < 25
+                      ? '#EF4444'
+                      : '#10B981',
+                  shadowColor:
+                    isDefeated
+                      ? '#EF4444'
+                      : hpPercentage < 25
+                      ? '#EF4444'
+                      : '#10B981',
                 },
               ]}
             >
@@ -181,7 +250,12 @@ export const HeroAvatarHUD: React.FC = () => {
               </View>
               <View>
                 <Text style={styles.barLabel}>CARGA DE EQUIPAMIENTO</Text>
-                <Text style={[styles.weightStateLabel, { color: weightStatusColor }]}>
+                <Text
+                  style={[
+                    styles.weightStateLabel,
+                    { color: weightStatusColor },
+                  ]}
+                >
                   {weightStatusBadge}
                 </Text>
               </View>
@@ -313,17 +387,27 @@ const styles = StyleSheet.create({
     borderColor: '#1E293B',
     gap: 5,
   },
+  readOnlyBadgeDefeated: {
+    backgroundColor: '#3B0716',
+    borderColor: '#EF444480',
+  },
   pulseDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
     backgroundColor: '#10B981',
   },
+  pulseDotDefeated: {
+    backgroundColor: '#EF4444',
+  },
   readOnlyText: {
     color: '#94A3B8',
     fontSize: 9,
     fontWeight: '800',
     letterSpacing: 0.5,
+  },
+  readOnlyTextDefeated: {
+    color: '#F87171',
   },
   avatarStage: {
     alignItems: 'center',
@@ -389,6 +473,32 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: 1.5,
   },
+  defeatedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: '#EF4444',
+    backgroundColor: '#450A0A',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 10,
+    elevation: 6,
+    gap: 8,
+  },
+  defeatedBadgeIcon: {
+    fontSize: 14,
+  },
+  defeatedBadgeText: {
+    color: '#FCA5A5',
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+  },
   subtitleLore: {
     color: '#94A3B8',
     fontSize: 11,
@@ -426,6 +536,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  hpIconBadgeDefeated: {
+    backgroundColor: '#EF444440',
+  },
   hpIconText: {
     fontSize: 12,
   },
@@ -462,6 +575,9 @@ const styles = StyleSheet.create({
     color: '#F8FAFC',
     fontSize: 14,
     fontWeight: '900',
+  },
+  barCurrentValueDefeated: {
+    color: '#EF4444',
   },
   barMaxValue: {
     color: '#64748B',

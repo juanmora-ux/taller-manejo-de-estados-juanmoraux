@@ -31,9 +31,11 @@ export const statsSlice = createSlice({
     },
     takeDamage: (state, action: PayloadAction<number>) => {
       const damage = action.payload;
+      // Resta el daño recibido garantizando un mínimo de 0 HP
       state.currentHp = Math.max(0, state.currentHp - damage);
     },
     healHero: (state) => {
+      // Restablece currentHp al máximo de salud (100)
       state.currentHp = state.maxHp;
     },
     applyBuildPreset: (state, action: PayloadAction<BuildPreset>) => {

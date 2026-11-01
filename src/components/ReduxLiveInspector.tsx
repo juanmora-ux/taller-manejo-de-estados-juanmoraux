@@ -7,6 +7,7 @@ import {
   selectActionLogs,
   selectBaseCombatPower,
   selectCombatPower,
+  selectHeroComputedStatus,
   selectIsOverloaded,
 } from '../store/selectors';
 
@@ -16,13 +17,15 @@ export const ReduxLiveInspector: React.FC = () => {
   const combatPower = useAppSelector(selectCombatPower);
   const basePower = useAppSelector(selectBaseCombatPower);
   const isOverloaded = useAppSelector(selectIsOverloaded);
+  const { currentHp, isDefeated } = useAppSelector(selectHeroComputedStatus);
 
   const handleAttackBoss = () => {
-    // El héroe ataca al boss pero recibe un contragolpe de 20 de daño
-    dispatch(takeDamage(20));
+    // El héroe asesta un golpe al jefe pero recibe 25 pts de daño por contragolpe
+    dispatch(takeDamage(25));
   };
 
   const handleHeal = () => {
+    // Restablece la salud al 100%
     dispatch(healHero());
   };
 
@@ -53,7 +56,11 @@ export const ReduxLiveInspector: React.FC = () => {
                 <Text style={styles.bossLevelText}>LVL 99 BOSS</Text>
               </View>
             </View>
-            <Text style={styles.bossThreat}>Amenaza Abisal • Mazmorra de Fuego</Text>
+            <Text style={styles.bossThreat}>
+              {isDefeated
+                ? '⚠️ ¡El héroe ha caído! Usa "Curar Héroe" para revivirlo.'
+                : 'Amenaza Abisal • Mazmorra de Fuego'}
+            </Text>
           </View>
         </View>
 
@@ -94,13 +101,23 @@ export const ReduxLiveInspector: React.FC = () => {
         <View style={styles.combatActionRow}>
           <TouchableOpacity
             activeOpacity={0.7}
-            style={styles.attackBossBtn}
+            style={[
+              styles.attackBossBtn,
+              isDefeated && styles.attackBossBtnDisabled,
+            ]}
             onPress={handleAttackBoss}
+            disabled={isDefeated}
           >
-            <Text style={styles.actionButtonIcon}>⚔️</Text>
+            <Text style={styles.actionButtonIcon}>
+              {isDefeated ? '💀' : '⚔️'}
+            </Text>
             <View>
-              <Text style={styles.attackBossText}>ATACAR AL BOSS</Text>
-              <Text style={styles.attackBossSub}>Recibe -20 HP de daño</Text>
+              <Text style={styles.attackBossText}>
+                {isDefeated ? 'HÉROE CAÍDO' : 'ATACAR AL BOSS'}
+              </Text>
+              <Text style={styles.attackBossSub}>
+                {isDefeated ? '(HP en 0 - Revive)' : 'Recibe -25 HP de daño'}
+              </Text>
             </View>
           </TouchableOpacity>
 
@@ -143,7 +160,7 @@ export const ReduxLiveInspector: React.FC = () => {
             <View style={styles.terminalEmptyState}>
               <Text style={styles.terminalPromptSign}>&gt;</Text>
               <Text style={styles.terminalEmptyText}>
-                Esperando dispatches de Redux Toolkit... Modifica stats o equipamiento.
+                Esperando dispatches de Redux Toolkit... Modifica stats o ataca al boss.
               </Text>
             </View>
           ) : (
@@ -299,7 +316,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   bossThreat: {
-    color: '#64748B',
+    color: '#94A3B8',
     fontSize: 10,
     marginTop: 2,
   },
@@ -405,6 +422,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.6,
     shadowRadius: 6,
     elevation: 4,
+  },
+  attackBossBtnDisabled: {
+    backgroundColor: '#271116',
+    borderColor: '#4A1D24',
+    opacity: 0.6,
   },
   healHeroBtn: {
     flex: 1,
