@@ -20,25 +20,30 @@ export const ArmoryGrid: React.FC = () => {
   const currentWeight = useAppSelector(selectCurrentWeight);
   const maxWeight = useAppSelector(selectMaxWeightCapacity);
 
-  const getCategoryLabel = (cat: InventoryItem['category']) => {
+  const getCategoryTheme = (cat: InventoryItem['category']) => {
     switch (cat) {
       case 'weapon':
-        return 'Arma';
+        return { label: 'ARMA', color: '#EF4444', bg: '#EF444415' };
       case 'shield':
-        return 'Escudo';
+        return { label: 'ESCUDO', color: '#38BDF8', bg: '#38BDF815' };
       case 'armor':
-        return 'Armadura';
+        return { label: 'ARMADURA', color: '#10B981', bg: '#10B98115' };
       case 'accessory':
-        return 'Accesorio';
+        return { label: 'ACCESORIO', color: '#A855F7', bg: '#A855F715' };
     }
   };
 
   return (
     <View style={styles.container}>
+      {/* Header Gamificado */}
       <View style={styles.headerRow}>
-        <View style={styles.titleInfoRow}>
-          <Text style={styles.zoneTag}>ZONA C</Text>
+        <View style={styles.zoneTagBox}>
+          <Text style={styles.zoneTagPrefix}>ZONA</Text>
+          <Text style={styles.zoneTagLetter}>C</Text>
+        </View>
+        <View style={styles.titleWrapper}>
           <Text style={styles.zoneTitle}>ARMORY GRID</Text>
+          <Text style={styles.zoneSubtitle}>Arsenal de Equipo & Modificadores</Text>
         </View>
 
         {equippedIds.length > 0 && (
@@ -52,26 +57,29 @@ export const ArmoryGrid: React.FC = () => {
         )}
       </View>
 
-      {/* Alerta de Advertencia de Sobrecarga */}
+      {/* Alerta Visual de Sobrecarga Neón */}
       {isOverloaded && (
-        <View style={styles.overloadAlert}>
-          <Text style={styles.overloadAlertIcon}>⚠️</Text>
-          <View style={styles.overloadAlertTextContainer}>
-            <Text style={styles.overloadAlertTitle}>
-              ¡SOBRECARGADO! (-30% Poder)
+        <View style={styles.overloadBanner}>
+          <View style={styles.overloadIconBox}>
+            <Text style={styles.overloadIcon}>⚠️</Text>
+          </View>
+          <View style={styles.overloadTextCol}>
+            <Text style={styles.overloadBannerTitle}>
+              ¡SOBRECARGADO! -30% PODER DE COMBATE
             </Text>
-            <Text style={styles.overloadAlertDesc}>
-              Peso {currentWeight}kg excede el límite de {maxWeight}kg.
-              ¡Desequipa objetos o aumenta tu Fuerza (STR)!
+            <Text style={styles.overloadBannerDetail}>
+              Límite de carga excedido: {currentWeight}kg de {maxWeight}kg permitidos.
+              Desequipa armamento o incrementa tu Fuerza (STR).
             </Text>
           </View>
         </View>
       )}
 
-      {/* Cuadrícula de 6 Ítems */}
+      {/* Grid de Ítems Estilo Inventario RPG */}
       <View style={styles.grid}>
         {items.map((item) => {
           const isEquipped = equippedIds.includes(item.id);
+          const categoryTheme = getCategoryTheme(item.category);
 
           return (
             <TouchableOpacity
@@ -79,18 +87,40 @@ export const ArmoryGrid: React.FC = () => {
               activeOpacity={0.8}
               style={[
                 styles.itemCard,
-                isEquipped && styles.itemCardEquipped,
+                isEquipped ? styles.itemCardEquipped : styles.itemCardUnequipped,
               ]}
               onPress={() => dispatch(toggleEquipItem(item.id))}
             >
-              <View style={styles.cardHeader}>
-                <Text style={styles.itemCategoryBadge}>
-                  {getCategoryLabel(item.category)}
-                </Text>
-                <Text style={styles.itemWeightText}>{item.weight} kg</Text>
+              {/* Badge Superior Flotante: Categoría y Peso */}
+              <View style={styles.cardTopRow}>
+                <View
+                  style={[
+                    styles.catBadge,
+                    {
+                      backgroundColor: categoryTheme.bg,
+                      borderColor: `${categoryTheme.color}50`,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[styles.catBadgeText, { color: categoryTheme.color }]}
+                  >
+                    {categoryTheme.label}
+                  </Text>
+                </View>
+
+                <View style={styles.weightBadge}>
+                  <Text style={styles.weightBadgeText}>{item.weight} kg</Text>
+                </View>
               </View>
 
-              <View style={styles.itemIconContainer}>
+              {/* Pedestal del Ícono */}
+              <View
+                style={[
+                  styles.iconPedestal,
+                  isEquipped && styles.iconPedestalEquipped,
+                ]}
+              >
                 <Text style={styles.itemIcon}>{item.icon}</Text>
               </View>
 
@@ -98,8 +128,8 @@ export const ArmoryGrid: React.FC = () => {
                 {item.name}
               </Text>
 
-              {/* Bonificaciones */}
-              <View style={styles.bonusesContainer}>
+              {/* Contenedor de Bonificaciones */}
+              <View style={styles.bonusStrip}>
                 {item.bonusStr !== 0 && (
                   <View style={[styles.bonusTag, styles.bonusStr]}>
                     <Text style={styles.bonusTagText}>
@@ -126,20 +156,24 @@ export const ArmoryGrid: React.FC = () => {
                 )}
               </View>
 
-              {/* Estado Equipado */}
+              {/* Estado de Acción Equipado / Equipar */}
               <View
                 style={[
-                  styles.statusFooter,
-                  isEquipped && styles.statusFooterEquipped,
+                  styles.slotStateBanner,
+                  isEquipped
+                    ? styles.slotStateBannerEquipped
+                    : styles.slotStateBannerUnequipped,
                 ]}
               >
                 <Text
                   style={[
-                    styles.statusFooterText,
-                    isEquipped && styles.statusFooterTextEquipped,
+                    styles.slotStateText,
+                    isEquipped
+                      ? styles.slotStateTextEquipped
+                      : styles.slotStateTextUnequipped,
                   ]}
                 >
-                  {isEquipped ? '✓ EQUIPADO' : 'Tocar para equipar'}
+                  {isEquipped ? '✨ EQUIPADO' : '+ EQUIPAR'}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -152,147 +186,199 @@ export const ArmoryGrid: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#131A2A',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: '#0F172A',
+    borderRadius: 20,
+    padding: 18,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#26334D',
+    borderWidth: 1.5,
+    borderColor: '#F59E0B30',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 8,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
   },
-  titleInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  zoneTag: {
-    backgroundColor: '#F59E0B20',
-    color: '#FBBF24',
-    fontSize: 10,
-    fontWeight: '800',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#F59E0B40',
-  },
-  zoneTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#94A3B8',
-    letterSpacing: 1.5,
-  },
-  clearBtn: {
-    backgroundColor: '#374151',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  zoneTagBox: {
+    backgroundColor: '#1E293B',
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#4B5563',
-  },
-  clearBtnText: {
-    color: '#E5E7EB',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  overloadAlert: {
-    flexDirection: 'row',
-    backgroundColor: '#EF444415',
-    borderWidth: 1.5,
-    borderColor: '#EF4444',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F59E0B50',
   },
-  overloadAlertIcon: {
-    fontSize: 24,
-    marginRight: 10,
-  },
-  overloadAlertTextContainer: {
-    flex: 1,
-  },
-  overloadAlertTitle: {
-    color: '#EF4444',
-    fontSize: 13,
+  zoneTagPrefix: {
+    color: '#F59E0B',
+    fontSize: 8,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
-  overloadAlertDesc: {
+  zoneTagLetter: {
+    color: '#F8FAFC',
+    fontSize: 14,
+    fontWeight: '900',
+    marginTop: -2,
+  },
+  titleWrapper: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  zoneTitle: {
+    color: '#F8FAFC',
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+  },
+  zoneSubtitle: {
+    color: '#64748B',
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  clearBtn: {
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#475569',
+  },
+  clearBtnText: {
+    color: '#E2E8F0',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  overloadBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#450A0A',
+    borderWidth: 1.5,
+    borderColor: '#EF4444',
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 14,
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  overloadIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#7F1D1D',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  overloadIcon: {
+    fontSize: 20,
+  },
+  overloadTextCol: {
+    flex: 1,
+  },
+  overloadBannerTitle: {
     color: '#FCA5A5',
-    fontSize: 11,
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
+  overloadBannerDetail: {
+    color: '#FECACA',
+    fontSize: 10,
     marginTop: 2,
-    lineHeight: 15,
+    lineHeight: 14,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
     justifyContent: 'space-between',
+    marginTop: 14,
   },
   itemCard: {
-    width: '48%',
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
+    width: '48.3%',
+    borderRadius: 14,
     padding: 10,
     borderWidth: 1.5,
-    borderColor: '#1E293B',
     justifyContent: 'space-between',
   },
+  itemCardUnequipped: {
+    backgroundColor: '#090D16',
+    borderColor: '#1E293B',
+  },
   itemCardEquipped: {
+    backgroundColor: '#1C1917',
     borderColor: '#F59E0B',
-    backgroundColor: '#1E2333',
     shadowColor: '#F59E0B',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.8,
+    shadowRadius: 10,
+    elevation: 6,
   },
-  cardHeader: {
+  cardTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  itemCategoryBadge: {
+  catBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  catBadgeText: {
+    fontSize: 8,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  weightBadge: {
     backgroundColor: '#1E293B',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  weightBadgeText: {
     color: '#94A3B8',
     fontSize: 9,
     fontWeight: '700',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    textTransform: 'uppercase',
   },
-  itemWeightText: {
-    color: '#64748B',
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  itemIconContainer: {
+  iconPedestal: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#131A2A',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    alignSelf: 'center',
     alignItems: 'center',
-    marginVertical: 6,
+    justifyContent: 'center',
+    marginVertical: 8,
+  },
+  iconPedestalEquipped: {
+    borderColor: '#F59E0B80',
+    backgroundColor: '#292113',
   },
   itemIcon: {
-    fontSize: 32,
+    fontSize: 28,
   },
   itemName: {
     color: '#F8FAFC',
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '900',
     textAlign: 'center',
     marginBottom: 6,
   },
-  bonusesContainer: {
+  bonusStrip: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
@@ -306,37 +392,40 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   bonusStr: {
-    backgroundColor: '#EF444420',
+    backgroundColor: '#EF444425',
   },
   bonusAgi: {
-    backgroundColor: '#10B98120',
+    backgroundColor: '#10B98125',
   },
   bonusInt: {
-    backgroundColor: '#8B5CF620',
+    backgroundColor: '#8B5CF625',
   },
   bonusTagText: {
-    color: '#E2E8F0',
+    color: '#F1F5F9',
     fontSize: 9,
-    fontWeight: '800',
+    fontWeight: '900',
   },
-  statusFooter: {
-    backgroundColor: '#1E293B',
-    borderRadius: 6,
-    paddingVertical: 4,
+  slotStateBanner: {
+    borderRadius: 8,
+    paddingVertical: 5,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  statusFooterEquipped: {
-    backgroundColor: '#F59E0B25',
-    borderWidth: 1,
-    borderColor: '#F59E0B',
+  slotStateBannerUnequipped: {
+    backgroundColor: '#1E293B',
   },
-  statusFooterText: {
-    color: '#64748B',
+  slotStateBannerEquipped: {
+    backgroundColor: '#F59E0B',
+  },
+  slotStateText: {
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '900',
+    letterSpacing: 0.8,
   },
-  statusFooterTextEquipped: {
-    color: '#FBBF24',
-    fontWeight: '800',
+  slotStateTextUnequipped: {
+    color: '#94A3B8',
+  },
+  slotStateTextEquipped: {
+    color: '#1C1917',
   },
 });
